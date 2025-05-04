@@ -1,9 +1,8 @@
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 
-public class JackAnalyzer {
+public class JackCompiler {
     private static void usage() {
-        System.out.printf("Usage: java %s <inputfile[.jack] | directory>", JackAnalyzer.class.getName());
+        System.out.printf("Usage: java %s <inputfile[.jack] | directory>", JackCompiler.class.getName());
         System.exit(1);
     }
 
@@ -43,14 +42,13 @@ public class JackAnalyzer {
                     return;
                 }
             }
-            String outputFileName = outputDir + File.separator + inputFileName.substring(0, inputFileName.length() - 5) + ".xml";
+            String outputFileName = outputDir + File.separator + inputFileName.substring(0, inputFileName.length() - 5) + ".vm";
 
             try (InputStream inputStream = new FileInputStream(inputFilePath)) {
                 try (OutputStream outputStream = new FileOutputStream(outputFileName)) {
-                    new CompilationEngine(new JackTokenizer(inputStream), outputStream)
-                            .compileClass();
+                    new CompilationEngine(inputStream, outputStream).compileClass();
                 }
-            } catch (IOException | ParserConfigurationException e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }

@@ -1,17 +1,11 @@
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class JackTokenizer {
-    // Arbitrary number of space characters, new line characters, and comments
-    // Three types of comments: single line, multi-line, and block comments
-    // /* comment until */, /** API comment until */ and // comment until new line
-    private final BufferedReader br;
     private String currentToken;
     private TokenType tokenType;
     private final Queue<String> tokenQueue = new ArrayDeque<>();
@@ -20,11 +14,15 @@ public class JackTokenizer {
 
     public JackTokenizer(InputStream inputStream) {
         // Initialize the tokenizer with the input stream
-        this.br = new BufferedReader(new InputStreamReader(inputStream));
+        // Arbitrary number of space characters, new line characters, and comments
+        // Three types of comments: single line, multi-line, and block comments
+        // /* comment until */, /** API comment until */ and // comment until new line
+        BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
         ArrayList<String> lines = new ArrayList<>();
         final boolean[] multiLineComment = {false};
-        this.br.lines().forEach(line -> {
+        br.lines().forEach(line -> {
             // Remove comments
+            line = line.trim();
             if (multiLineComment[0]) {
                 if (line.contains("*/")) {
                     multiLineComment[0] = false;
@@ -77,7 +75,7 @@ public class JackTokenizer {
         }
     }
 
-    public void advance() throws IOException {
+    public void advance() {
         // Read the next token from the input stream
         if (this.hasMoreTokens()) {
             this.currentToken = this.tokenQueue.poll();
@@ -171,25 +169,11 @@ public class JackTokenizer {
     }
 
     public Keyword keyWord() {
-        if (this.tokenType == TokenType.KEYWORD) {
-            return Keyword.getKeyword(this.currentToken);
-        } else {
-            throw new IllegalStateException("Current token is not a keyword");
-        }
+        return Keyword.getKeyword(this.currentToken);
     }
 
     public enum TokenType {
-        KEYWORD, SYMBOL, IDENTIFIER, INT_CONST, STRING_CONST;
-
-        public String toXMLTag() {
-            return switch (this) {
-                case KEYWORD -> "keyword";
-                case SYMBOL -> "symbol";
-                case IDENTIFIER -> "identifier";
-                case INT_CONST -> "integerConstant";
-                case STRING_CONST -> "stringConstant";
-            };
-        }
+        KEYWORD, SYMBOL, IDENTIFIER, INT_CONST, STRING_CONST
     }
 
     public enum Keyword {
@@ -221,22 +205,8 @@ public class JackTokenizer {
                 Map.entry("this", THIS)
             );
 
-        private static final Map<Keyword, String> MAP_INVERSE;
-
-        static {
-            Map<Keyword, String> map = new HashMap<>();
-            for (Map.Entry<String, Keyword> entry : MAP.entrySet()) {
-                map.put(entry.getValue(), entry.getKey());
-            }
-            MAP_INVERSE = Collections.unmodifiableMap(map);
-        }
-
         public static Keyword getKeyword(String keyword) {
             return MAP.get(keyword);
-        }
-
-        public String getKeyword() {
-            return MAP_INVERSE.get(this);
         }
 
         public static boolean isKeyword(String token) {
